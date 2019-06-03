@@ -19,3 +19,7 @@
   }
 
 </script>
+
+<style scoped>
+
+</style>

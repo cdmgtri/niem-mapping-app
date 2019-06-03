@@ -6,7 +6,6 @@
     <div class="niem-tag-line">NATIONAL INFORMATION EXCHANGE MODEL</div>
     <div class="official">
       <img alt="US flag" src="../assets/images/us-flag.png">
-      <span>A website</span>
       <!-- <span>An official website of the United States Government</span> -->
     </div>
   </div>

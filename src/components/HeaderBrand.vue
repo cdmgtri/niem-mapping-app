@@ -8,7 +8,7 @@
 
     <!-- Tool name -->
     <div id="site-name">
-      <router-link to="/" class="active">Tool Template</router-link>
+      <router-link to="/" class="active">Mapping App</router-link>
     </div>
   </div>
 </template>
@@ -28,6 +28,10 @@ export default {
   font-weight: 900;
   padding: 16px 0px;
   position: relative
+}
+
+.navbar-brand {
+  padding-left: 0;
 }
 
 </style>
