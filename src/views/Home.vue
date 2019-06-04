@@ -60,32 +60,45 @@
       <br/>
 
 
-      <!-- Message: In progress -->
-      <div v-if="loadStatus=='in progress'" class="alert alert-secondary">
-        <h4>First pass: spreadsheet format</h4>
-        <hr/>
-        <p>Checking for required tabs, required columns, valid mapping codes, and required values.</p>
+      <!-- First pass message -->
+      <div :class="['alert', getStatusAlertClass(loadStatus)]">
+        <h4 class="mb-0">
+          <!-- Status icon -->
+          <i v-if="loadStatus=='pass'" class="fa fa-fw fa-check-circle"></i>
+          <i v-else-if="loadStatus=='fail'" class="fa fa-fw fa-exclamation-circle"></i>
+          <i v-else class="fa fa-fw fa-circle-o-notch fa-spin"></i>
+
+          1 of 2: Spreadsheet format tests
+
+          <!-- Toggle collapse button -->
+          <button
+            class="btn btn-sm pull-right pt-0 pb-0"
+            data-toggle="collapse" data-target="#firstPassDescription"
+            @click="showFirstPassDescription=!showFirstPassDescription">
+            <i v-if="showFirstPassDescription" class="fa fa-fw fa-minus"></i>
+            <i v-else class="fa fa-fw fa-plus"></i>
+          </button>
+        </h4>
+
+        <div class="collapse show" id="firstPassDescription">
+          <hr/>
+          <p>Basic checks for required tabs, columns, and fields, plus checks for valid mapping codes and field formats.</p>
+
+          <!-- Status-based message -->
+          <strong>
+            <p v-if="loadStatus=='pass'">
+              Now running modeling tests...  <em>(Not yet implemented)</em>
+            </p>
+            <p v-else-if="loadStatus=='fail'">
+              Please correct the errors below and reload to continue with the modeling tests.
+            </p>
+            <p v-else>
+              Running formatting tests...
+            </p>
+          </strong>
+        </div>
       </div>
 
-      <!-- Message: First pass succeeded -->
-      <div v-if="loadStatus=='pass'" class="alert alert-success">
-        <h4>
-          <i class="fa fa-fw fa-check-circle"></i>
-          First pass: spreadsheet format
-        </h4>
-        <hr/>
-        <p>Spreadsheet was formatted correctly.  Now running QA tests...  <em>(not yet implemented)</em></p>
-      </div>
-
-      <!-- Message: First pass failed -->
-      <div v-if="loadStatus=='fail'" class="alert alert-danger">
-        <h4>
-          <i class="fa fa-fw fa-exclamation-circle"></i>
-          First pass: spreadsheet format
-        </h4>
-        <hr/>
-        <p>The spreadsheet did not pass the initial tests, checking for required tabs, required columns, valid mapping codes, and required values.  Please fix the errors below and upload again to look for modeling issues.</p>
-      </div>
 
       <!-- Results table for first pass (load) errors -->
       <b-table v-if="results" striped hover :items="results"/>
@@ -117,12 +130,27 @@ export default {
       results: [],
 
       /** @type {null|"in progress"|"pass"|"fail"} */
-      loadStatus: null
+      loadStatus: null,
+
+      showFirstPassDescription: true
 
     }
   },
 
   methods: {
+
+    /**
+     * Gets the Bootstrap alert class for the current loadStatus
+     */
+    getStatusAlertClass(status) {
+      if (status == "pass") {
+        return "alert-success";
+      }
+      if (status == "fail") {
+        return "alert-danger";
+      }
+      return "alert-secondary";
+    },
 
     /**
      * @param {Buffer} buffer
@@ -148,6 +176,9 @@ export default {
      * @param {Event} event
      */
     loadUserFile(event) {
+
+      this.displayResults = true;
+      this.loadStatus = "in progress";
 
       /** @type {File} */
       let file = event.target.files[0];
@@ -185,6 +216,9 @@ export default {
       this.fileName = fileName;
       this.fileIsSample = true;
 
+      this.displayResults = true;
+      this.loadStatus = "in progress";
+
       axios
         .get(filePath, { responseType: "arraybuffer" })
         .then( response => this.validate(response.data) )
@@ -198,14 +232,38 @@ export default {
         return;
       }
 
-      // Add column names to the first row
-      let csvString = Object.keys(this.results[0]).join(",") + "\n";
+      // Convert array of objects to array of arrays
+      let rows = this.results.map( result => Object.values(result) );
 
-      // Translate the array of issues to comma-separated values separated by newlines
-      csvString += this.results.map( row => Object.values(row).join(",")).join("\n");
+      axios
+        .get("templates/issue-template.xlsx", { responseType: "arraybuffer"} )
+        .then( response => {
+          xlsx
+            .fromDataAsync(response.data)
+            .then( workbook => {
+              // Copy converted results to spreadsheet
+              workbook.sheet(0).cell("A2").value(rows);
 
-      let blob = new Blob([csvString], {type: "text/csv;charset=utf-8"});
-      saveAs(blob, this.fileName.replace(".xlsx", "-qa.csv"));
+              // Download results spreadsheet
+              workbook.outputAsync("blob")
+                .then( blob => {
+                  saveAs(blob, this.fileName.replace(".xlsx", "-qa.xlsx"));
+                });
+            });
+        })
+        .catch( err => console.log(err) );
+
+
+
+
+      // // Add column names to the first row
+      // let csvString = Object.keys(this.results[0]).join(",") + "\n";
+
+      // // Translate the array of issues to comma-separated values separated by newlines
+      // csvString += this.results.map( row => Object.values(row).join(",")).join("\n");
+
+      // let blob = new Blob([csvString], {type: "text/csv;charset=utf-8"});
+      // saveAs(blob, this.fileName.replace(".xlsx", "-qa.csv"));
     }
 
 }

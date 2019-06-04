@@ -1,6 +1,6 @@
 
 module.exports = {
-  baseUrl: '/niem-mapping-app/',
+  publicPath: '/niem-mapping-app/',
   assetsDir: 'src/assets',
   devServer: {
     watchOptions: {

@@ -7,7 +7,7 @@
     <p>Spreadsheets are often used with NIEM for a variety of purposes.  There is enough overlap in some of the primary use cases for a standard template, which allows for the development of automated QA, data import, and translation into other formats.</p>
 
     <p>
-      <a download href="/niem-mapping-template.xlsx" class="btn btn-sm btn-info">
+      <a download href="templates/niem-mapping-template.xlsx" class="btn btn-sm btn-info">
         <i class="fa fa-download"></i> Download NIEM mapping template
       </a>
     </p>
