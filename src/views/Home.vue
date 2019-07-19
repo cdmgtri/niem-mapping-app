@@ -21,17 +21,17 @@
         Valid spreadsheet
       </a>
 
-      <!-- Invalid example button -->
+      <!-- Invalid formatting example button -->
       <a class="dropdown-item" @click="loadInvalidFormattingExample">
         <i class="fa fa-exclamation fa-fw text-danger" aria-hidden="true"></i>
         Invalid spreadsheet (formatting issues)
       </a>
 
-      <!-- Invalid example button -->
-      <!-- <a class="dropdown-item" @click="loadInvalidModelingExample">
+      <!-- Invalid modeling example button -->
+      <a class="dropdown-item" @click="loadInvalidModelingExample">
         <i class="fa fa-exclamation fa-fw text-danger" aria-hidden="true"></i>
         Invalid spreadsheet (modeling issues)
-      </a> -->
+      </a>
 
     </div>
     <br>
@@ -161,8 +161,8 @@ export default {
       this.loadStatus = "in progress";
 
       let mapping = new NIEMMapping(buffer);
-      this.results = mapping.loadErrors;
-      this.loadStatus = this.results.length == 0 ? "pass" : "fail";
+      this.results = this.formatResults(mapping.failedTests);
+      this.loadStatus = mapping.validFormat && this.results.length == 0 ? "pass" : "fail";
 
       // Call niem-mapping.qa() to check spreadsheet formatting
 
@@ -223,6 +223,36 @@ export default {
         .get(filePath, { responseType: "arraybuffer" })
         .then( response => this.validate(response.data) )
         .catch( err => console.log(err) );
+
+    },
+
+    /**
+     * @param {Object[]} results
+     */
+    formatResults(results) {
+
+      let issues = [];
+
+      results.forEach( test => {
+        test.issues.forEach( issue => {
+          issues.push({
+            tab: issue.location,
+            row: issue.line,
+            col: issue.position,
+            label: issue.label,
+            id: test.id,
+            description: test.description,
+            NDR: test.ndr,
+            component: test.component,
+            field: test.field,
+            applicability: test.applicability,
+            severity: test.severity,
+            problemValue: issue.problemValue
+          });
+        });
+      });
+
+      return issues;
 
     },
 
