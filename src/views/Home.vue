@@ -157,6 +157,7 @@ export default {
      */
     validate(buffer) {
 
+      this.results = [];
       this.displayResults = true;
       this.loadStatus = "in progress";
 
@@ -165,6 +166,7 @@ export default {
       this.loadStatus = mapping.validFormat && this.results.length == 0 ? "pass" : "fail";
 
       // Call niem-mapping.qa() to check spreadsheet formatting
+
 
       // Set data = niem-mapping.load() to load the data
 
@@ -177,6 +179,7 @@ export default {
      */
     loadUserFile(event) {
 
+      this.results = [];
       this.displayResults = true;
       this.loadStatus = "in progress";
 
@@ -216,6 +219,7 @@ export default {
       this.fileName = fileName;
       this.fileIsSample = true;
 
+      this.results = [];
       this.displayResults = true;
       this.loadStatus = "in progress";
 
