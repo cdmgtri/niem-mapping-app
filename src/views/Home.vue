@@ -101,7 +101,7 @@
 
 
       <!-- Results table for first pass (load) errors -->
-      <b-table v-if="results" striped hover :items="results"/>
+      <b-table small v-if="results" striped hover :items="results" :fields="fields"/>
 
     </div>
 
@@ -128,6 +128,9 @@ export default {
       displayResults: false,
 
       results: [],
+
+      /** Fields from the results object to use as columns in the results display */
+      fields: [ "id", "tab", "row", "col", "description" ],
 
       /** @type {null|"in progress"|"pass"|"fail"} */
       loadStatus: null,
@@ -231,6 +234,7 @@ export default {
     },
 
     /**
+     * @todo Move formatResults to the niem-qa project as flattenedResults
      * @param {Object[]} results
      */
     formatResults(results) {
