@@ -99,9 +99,48 @@
         </div>
       </div>
 
+<!--
+    tab, row, col, id, description
+    label, NDR, component, field, applicability, severity, problemValue
+ -->
 
-      <!-- Results table for first pass (load) errors -->
-      <b-table small v-if="results" striped hover :items="results" :fields="fields"/>
+      <!-- Results table for issues -->
+      <b-table small v-if="results" striped hover :items="results" :fields="fields">
+
+        <!-- Display the status / issue severity icon -->
+        <template slot="status" slot-scope="data">
+          <i :class="getIssueSeverityIconClasses(data.item.severity)"></i>
+        </template>
+
+        <!-- Template for row expand button -->
+        <template slot="more..." slot-scope="row">
+
+          <!-- Toggle the plus / minus icon based on if the row is open -->
+          <b-button variant="outline-secondary" size="sm" @click="row.toggleDetails">
+            <i v-if="row.detailsShowing" class="fa fa-fw fa-caret-up"></i>
+            <i v-else class="fa fa-fw fa-caret-down"></i>
+          </b-button>
+
+        </template>
+
+        <!-- Template for expanded row content -->
+        <template slot="row-details" slot-scope="row">
+
+          <b-card>
+            <h4>{{ getSpreadsheetLocation(row.item) }}</h4>
+
+            <p>Label: {{ row.item.label }}</p>
+            <p>NDR: {{ row.item.NDR }}</p>
+            <p>Component: {{ row.item.component }}</p>
+            <p>Field: {{ row.item.field }}</p>
+            <p>Applicability: {{ row.item.applicability }}</p>
+            <p>Severity: {{ row.item.severity }}</p>
+            <p>Problem value: {{ row.item.problemValue }}</p>
+          </b-card>
+
+        </template>
+
+      </b-table>
 
     </div>
 
@@ -130,7 +169,7 @@ export default {
       results: [],
 
       /** Fields from the results object to use as columns in the results display */
-      fields: [ "id", "tab", "row", "col", "description" ],
+      fields: [ "status", "test", "tab", "row", "col", "description", "more..." ],
 
       /** @type {null|"in progress"|"pass"|"fail"} */
       loadStatus: null,
@@ -149,8 +188,11 @@ export default {
       if (status == "pass") {
         return "alert-success";
       }
-      if (status == "fail") {
+      if (status == "fail" || status == "error") {
         return "alert-danger";
+      }
+      if (status == "warning") {
+        return "alert-warning";
       }
       return "alert-secondary";
     },
@@ -234,6 +276,31 @@ export default {
     },
 
     /**
+     * Returns a string describing where an issue is located.
+     *
+     * @example "Tab: Property | Row: 1 | Col: Mapping Code"
+     */
+    getSpreadsheetLocation(formattedIssue) {
+      return `Tab: ${formattedIssue.tab} | Row: ${formattedIssue.row} | Col: ${formattedIssue.col}`;
+    },
+
+    getIssueSeverityIconClasses(severity) {
+
+      let icon = "";
+
+      if (severity == "error") {
+        icon = "fa-exclamation-circle text-danger";
+      }
+      else if (severity == "warning") {
+        icon = "fa-bell text-warning"
+      }
+      else if (severity == "info") {
+        icon = "fa-info-circle";
+      }
+      return "fa fa-fw " + icon;
+    },
+
+    /**
      * @todo Move formatResults to the niem-qa project as flattenedResults
      * @param {Object[]} results
      */
@@ -248,7 +315,7 @@ export default {
             row: issue.line,
             col: issue.position,
             label: issue.label,
-            id: test.id,
+            test: test.id,
             description: test.description,
             NDR: test.ndr,
             component: test.component,
