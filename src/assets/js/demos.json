@@ -1,0 +1,26 @@
+[
+  {
+    "id": 1,
+    "text": "Valid example",
+    "classes": "fa-check text-success",
+    "fileName": "iepd-requirements-example.xlsx"
+  },
+  {
+    "id": 2,
+    "text": "Invalid #1 (structural issues)",
+    "classes": "fa-exclamation text-danger",
+    "fileName": "iepd-requirements-example-invalid-formatting.xlsx"
+  },
+  {
+    "id": 3,
+    "text": "Invalid #2 (format issues)",
+    "classes": "fa-exclamation text-danger",
+    "fileName": "iepd-requirements-example-invalid-modeling.xlsx"
+  },
+  {
+    "id": 4,
+    "text": "Invalid #3 (modeling issues)",
+    "classes": "fa-exclamation text-danger",
+    "fileName": "iepd-requirements-example-invalid-modeling.xlsx"
+  }
+]

@@ -15,22 +15,14 @@
 
     <div class="dropdown-menu" aria-labelledby="demo">
 
-      <!-- Valid example button -->
-      <a class="dropdown-item" @click="loadValidExample">
-        <i class="fa fa-check fa-fw text-success" aria-hidden="true"></i>
-        Valid spreadsheet
-      </a>
+      <!-- Demo spreadsheet dropdown items -->
+      <a
+        v-for="demo in demos" v-bind:key="demo.id"
+        class="dropdown-item" @click="loadExampleFile(demo.fileName)">
 
-      <!-- Invalid formatting example button -->
-      <a class="dropdown-item" @click="loadInvalidFormattingExample">
-        <i class="fa fa-exclamation fa-fw text-danger" aria-hidden="true"></i>
-        Invalid spreadsheet (formatting issues)
-      </a>
+        <i class="fa fa-fw" :class="demo.classes" aria-hidden="true"></i>
+        {{ demo.text }}
 
-      <!-- Invalid modeling example button -->
-      <a class="dropdown-item" @click="loadInvalidModelingExample">
-        <i class="fa fa-exclamation fa-fw text-danger" aria-hidden="true"></i>
-        Invalid spreadsheet (modeling issues)
       </a>
 
     </div>
@@ -150,10 +142,10 @@
 <script>
 
 import axios from "axios";
-import { saveAs } from "file-saver";
 import NIEMMapping from "niem-mapping";
 import xlsx from "xlsx-populate";
-
+import { saveAs } from "file-saver";
+import demos from "../assets/js/demos.json";
 
 export default {
   name: "Home",
@@ -163,6 +155,12 @@ export default {
 
       fileName: "",
       fileIsSample: false,
+
+      /**
+       * Example spreadsheets for demo purposes
+       * @type {{id: number, text: string, classes: string, fileName: string}[]}
+      */
+      demos: demos,
 
       displayResults: false,
 
@@ -238,18 +236,6 @@ export default {
         .then( buffer => this.validate(buffer) )
         .catch( err => console.log(err) );
 
-    },
-
-    loadValidExample() {
-      this.loadExampleFile("iepd-requirements-example.xlsx");
-    },
-
-    loadInvalidFormattingExample() {
-      this.loadExampleFile("iepd-requirements-example-invalid-formatting.xlsx");
-    },
-
-    loadInvalidModelingExample() {
-      this.loadExampleFile("iepd-requirements-example-invalid-modeling.xlsx");
     },
 
     /**
