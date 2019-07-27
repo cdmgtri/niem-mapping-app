@@ -29,14 +29,15 @@
     <br>
 
 
-    <div v-if="displayResults">
+    <div v-if="statusPanel.stage > 0">
 
       <hr>
       <div>
-        <h2>Results</h2>
+        <h2>Status</h2>
 
-        <!-- Download demo and results buttons -->
+        <!-- Download demo and download results buttons -->
         <div class="btn-group align-with-header" role="group">
+
           <!-- Download sample spreadsheet if demo was used -->
           <a download v-if="fileIsSample" class="btn btn-sm"
             :href="'/examples/' + fileName">
@@ -52,49 +53,35 @@
       <br/>
 
 
-      <!-- First pass message -->
-      <div :class="['alert', getStatusAlertClass(loadStatus)]">
+      <!-- Status panel -->
+      <div :class="['alert', statusAlertClass]">
         <h4 class="mb-0">
-          <!-- Status icon -->
-          <i v-if="loadStatus=='pass'" class="fa fa-fw fa-check-circle"></i>
-          <i v-else-if="loadStatus=='fail'" class="fa fa-fw fa-exclamation-circle"></i>
-          <i v-else class="fa fa-fw fa-circle-o-notch fa-spin"></i>
 
-          1 of 2: Spreadsheet format tests
+          <!-- Status icon -->
+          <i class="fa fa-fw" :class="statusIconClass"></i>
+
+          <!-- Status header -->
+          {{ statusPanel.stage }} of 2: {{ statusPanel.label }}
 
           <!-- Toggle collapse button -->
           <button
             class="btn btn-sm pull-right pt-0 pb-0"
-            data-toggle="collapse" data-target="#firstPassDescription"
-            @click="showFirstPassDescription=!showFirstPassDescription">
-            <i v-if="showFirstPassDescription" class="fa fa-fw fa-minus"></i>
+            data-toggle="collapse" data-target="#statusExpanded"
+            @click="statusPanel.expand=!statusPanel.expand">
+            <i v-if="statusPanel.expand" class="fa fa-fw fa-minus"></i>
             <i v-else class="fa fa-fw fa-plus"></i>
           </button>
         </h4>
 
-        <div class="collapse show" id="firstPassDescription">
+        <div class="collapse show" id="statusExpanded">
           <hr/>
-          <p>Basic checks for required tabs, columns, and fields, plus checks for valid mapping codes and field formats.</p>
-
-          <!-- Status-based message -->
+          <p>{{ statusPanel.description }}</p>
           <strong>
-            <p v-if="loadStatus=='pass'">
-              Now running modeling tests...  <em>(Not yet implemented)</em>
-            </p>
-            <p v-else-if="loadStatus=='fail'">
-              Please correct the errors below and reload to continue with the modeling tests.
-            </p>
-            <p v-else>
-              Running formatting tests...
-            </p>
+            <p>{{ statusPanel.error }}</p>
           </strong>
         </div>
       </div>
 
-<!--
-    tab, row, col, id, description
-    label, NDR, component, field, applicability, severity, problemValue
- -->
 
       <!-- Results table for issues -->
       <b-table small v-if="results" striped hover :items="results" :fields="fields">
@@ -162,58 +149,131 @@ export default {
       */
       demos: demos,
 
-      displayResults: false,
+      /**
+       * Results status panel values
+       */
+      statusPanel: {
+
+        stage: 0,
+        label: "",
+        description: "",
+        error: "",
+        expand: true,
+
+        /** @type {null|"in progress"|"pass"|"fail"} */
+        status: ""
+      },
 
       results: [],
 
       /** Fields from the results object to use as columns in the results display */
       fields: [ "status", "test", "tab", "row", "col", "description", "more..." ],
 
-      /** @type {null|"in progress"|"pass"|"fail"} */
-      loadStatus: null,
-
-      showFirstPassDescription: true
-
     }
   },
 
-  methods: {
+  computed: {
 
     /**
-     * Gets the Bootstrap alert class for the current loadStatus
+     * Returns the font-awesome icon for the status panel
      */
-    getStatusAlertClass(status) {
-      if (status == "pass") {
+    statusIconClass() {
+
+      if (this.statusPanel.status == "in progress") {
+        return "fa-circle-o-notch fa-spin";
+      }
+      if (this.statusPanel.status == "pass") {
+        return "fa-check-circle";
+      }
+      if (this.statusPanel.status == "fail") {
+        return "fa-exclamation-circle";
+      }
+      return "fa-question-circle";
+
+    },
+
+    /**
+     * Returns the Bootstrap alert class for the status panel
+     */
+    statusAlertClass() {
+
+      if (this.statusPanel.status == "pass") {
         return "alert-success";
       }
-      if (status == "fail" || status == "error") {
+      if (this.statusPanel.status == "fail" || this.statusPanel.status == "error") {
         return "alert-danger";
       }
-      if (status == "warning") {
+      if (this.statusPanel.status == "warning") {
         return "alert-warning";
       }
       return "alert-secondary";
-    },
+
+    }
+
+  },
+
+  methods: {
 
     /**
      * @param {Buffer} buffer
      */
     validate(buffer) {
 
+      // Reset the results
       this.results = [];
-      this.displayResults = true;
-      this.loadStatus = "in progress";
 
+      // Set the status panel for stage 1
+      this.statusPanel.stage = 1;
+      this.statusPanel.label = "Spreadsheet format checks";
+      this.statusPanel.description = "Checking the spreadsheet for required tabs, columns, and field values, plus checks for valid mapping codes and formatting";
+      this.statusPanel.status = "in progress";
+
+      // Run tests
       let mapping = new NIEMMapping(buffer);
       this.results = this.formatResults(mapping.failedTests);
-      this.loadStatus = mapping.validFormat && this.results.length == 0 ? "pass" : "fail";
 
-      // Call niem-mapping.qa() to check spreadsheet formatting
+      // Update the status panel for structural issues
+      if (! mapping.validFormat) {
+        this.statusPanel.status = "fail";
+        this.statusPanel.error = "Please make sure the spreadsheet has all required tabs and columns before proceeding with additional QA checks."
+        return;
+      }
 
+      // Update the status panel for other spreadsheet formatting issues
+      if (this.results.length > 0) {
+        this.statusPanel.status = "fail";
+        this.statusPanel.error = "Please make sure the spreadsheet is formatted correctly before proceeding with additional QA checks."
+        return;
+      }
 
-      // Set data = niem-mapping.load() to load the data
+      // Update the status panel for stage 2 checks
+      this.statusPanel.stage = 2;
+      this.statusPanel.label = "Modeling QA";
+      this.statusPanel.description = "Checking the spreadsheet for valid modeling."
 
-      // Call niem-qa to check modeling
+      // Make this accessible in the callback
+      let self = this;
+
+      // Call niem-mapping.qa() to check for modeling issues
+      mapping
+        .loadData()
+        .then( () => {
+          self.results = self.formatResults(mapping.failedTests);
+
+          // Pass
+          if (self.results.length == 0) {
+            self.statusPanel.status = "pass";
+            self.statusPanel.description = "All currently implemented formatting and QA checks passed!";
+          }
+          else {
+            self.statusPanel.status = "fail";
+            self.statusPanel.error = "Please review the spreadsheet based on the issues listed below.";
+          }
+        })
+        .catch( err => {
+            self.statusPanel.status = null;
+            self.statusPanel.error = "Unexpected error encountered: " + err.message;
+        });
 
     },
 
@@ -222,9 +282,7 @@ export default {
      */
     loadUserFile(event) {
 
-      this.results = [];
-      this.displayResults = true;
-      this.loadStatus = "in progress";
+      this.statusPanel.stage = 0;
 
       /** @type {File} */
       let file = event.target.files[0];
@@ -250,9 +308,7 @@ export default {
       this.fileName = fileName;
       this.fileIsSample = true;
 
-      this.results = [];
-      this.displayResults = true;
-      this.loadStatus = "in progress";
+      this.statusPanel.stage = 0;
 
       axios
         .get(filePath, { responseType: "arraybuffer" })
